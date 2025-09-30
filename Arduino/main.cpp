@@ -33,6 +33,9 @@ String lastStage = "";
 
 void setup()
 {
+
+  wdt_disable();
+
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
@@ -56,31 +59,31 @@ void setup()
   pinMode(ESP3, INPUT);
 
   Serial.begin(9600);
+  delay(500);
+
   wdt_enable(WDTO_8S);
-  Serial.println("Watchdog enabled");
 }
 
 void loop()
 {
-  wdt_reset();
 
   int dist = readDistance();
   if (dist < 35)
   {
-    conveyorRunning = true;       // Mark as running
-    conveyorStartTime = millis(); // Save start time
+    wdt_reset();
+    conveyorRunning = true;
+    conveyorStartTime = millis();
   }
   if (conveyorRunning)
   {
     conveyorBackward();
   }
 
-  // If conveyor has been running for 10s, stop it
   if (conveyorRunning && millis() - conveyorStartTime >= 5000)
   {
     conveyorStop();
     conveyorRunning = false;
-    Serial.println("Conveyor Stopped after 10s");
+    Serial.println("Conveyor Stopped after 5s");
   }
 
   int b1 = digitalRead(ESP1);
@@ -93,31 +96,32 @@ void loop()
   if (bits != lastStage)
   {
     lastStage = bits;
+    wdt_reset();
 
     if (bits == "000")
     {
       stopMotors();
-      // Serial.println("STOP");
+      Serial.println("STOP");
     }
     else if (bits == "001")
     {
       forward();
-      // Serial.println("FORWARD");
+      Serial.println("FORWARD");
     }
     else if (bits == "010")
     {
       backward();
-      // Serial.println("BACKWARD");
+      Serial.println("BACKWARD");
     }
     else if (bits == "011")
     {
       left();
-      // Serial.println("LEFT");
+      Serial.println("LEFT");
     }
     else if (bits == "100")
     {
       right();
-      // Serial.println("RIGHT");
+      Serial.println("RIGHT");
     }
   }
 
@@ -132,8 +136,12 @@ int readDistance()
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
-  duration = pulseIn(echoPin, HIGH);
+  duration = pulseIn(echoPin, HIGH, 30000);
   distance = duration * 0.034 / 2; // Convert to cm
+  if (duration == 0)
+  {
+    return 999;
+  }
   return distance;
 }
 
@@ -141,82 +149,66 @@ void conveyorBackward()
 {
   digitalWrite(IN5, LOW);
   digitalWrite(IN6, HIGH);
-  analogWrite(ENC, 80); // Set conveyor speed
+  analogWrite(ENC, 80); 
 }
 
-// Function to stop Conveyor Belt motor
 void conveyorStop()
 {
   digitalWrite(IN5, LOW);
   digitalWrite(IN6, LOW);
-  analogWrite(ENC, 0); // Stop conveyor
+  analogWrite(ENC, 0); 
 }
 
-// Function to move forward
 void forward()
 {
-  // Left motor forward
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
-  analogWrite(ENA, currentSpeed); // Set left motor speed
+  analogWrite(ENA, currentSpeed); 
 
-  // Right motor forward
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
-  analogWrite(ENB, currentSpeed); // Set right motor speed
+  analogWrite(ENB, currentSpeed); 
 }
 
-// Function to move backward
 void backward()
 {
-  // Left motor backward
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
-  analogWrite(ENA, currentSpeed); // Set left motor speed
+  analogWrite(ENA, currentSpeed); 
 
-  // Right motor backward
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(ENB, currentSpeed); // Set right motor speed
+  analogWrite(ENB, currentSpeed); 
 }
 
-// Function to turn left
 void left()
 {
-  // Left motor backward (or stop for gentle turn)
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
-  analogWrite(ENA, currentSpeed); // Slower speed for turning
+  analogWrite(ENA, currentSpeed);
 
-  // Right motor forward
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
-  analogWrite(ENB, currentSpeed); // Slower speed for turning
+  analogWrite(ENB, currentSpeed);
 }
 
-// Function to turn right
 void right()
 {
-  // Left motor forward
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
-  analogWrite(ENA, currentSpeed); // Slower speed for turning
+  analogWrite(ENA, currentSpeed);
 
-  // Right motor backward (or stop for gentle turn)
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(ENB, currentSpeed); // Slower speed for turning
+  analogWrite(ENB, currentSpeed);
 }
 
-// Function to stop all motors
 void stopMotors()
 {
-  // Stop left motor
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   analogWrite(ENA, 0); // Set speed to 0
 
-  // Stop right motor
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, LOW);
   analogWrite(ENB, 0); // Set speed to 0
