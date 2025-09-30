@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    flex-wrap: wrap; /* stack cards on small screens */
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    border-radius: 15px;
+    margin: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+    text-align: center;
+}
+
+.card h2 {
+    margin-bottom: 15px;
+    font-size: 24px;
+    color: #ffffff;
+}
+
+h1 {
+    width: 100%;
+    text-align: center;
+    font-size: 36px;
+    margin-bottom: 30px;
+}
+
+.row {
+    margin: 10px 0;
+}
+
+.control-button {
+    font-size: 28px;
+    width: 80px;
+    height: 80px;
+    margin: 10px;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.control-button:hover {
+    transform: scale(1.05);
+}
+
+.on  {
+    background-color: #28a745;
+}
+
+.off {
+    background-color: #6c757d;
+}
+
+@media (max-width: 600px) {
+    .control-button {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+}
