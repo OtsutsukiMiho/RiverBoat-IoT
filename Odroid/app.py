@@ -1,5 +1,6 @@
-from flask import Flask, render_template_string, request, jsonify
+from flask import Flask, render_template_string, request, jsonify, Response
 import requests
+import cv2
 
 app = Flask(__name__)
 
@@ -12,8 +13,8 @@ THING_ID = "d28b3c5e-9e12-4740-b6c0-a11ca6de204b"
 PROPERTY_IDS = {
     "W": "6d519ee6-4762-4c30-9445-83d652785341",
     "A": "65923002-6995-4d79-878a-73cd98b01118",
-    "D": "e36f0146-01d8-43dc-a836-79fe03cf27a4",
-    "S": "4265ace7-6c4d-4d4b-b870-3980764053ca",
+    "S": "e36f0146-01d8-43dc-a836-79fe03cf27a4",
+    "D": "4265ace7-6c4d-4d4b-b870-3980764053ca",
 }
 
 # ================= Button State Storage ==================
@@ -72,8 +73,8 @@ HTML_PAGE = '''
             </div>
             <div class="row">
                 <button id="A" class="control-button off" onclick="toggleButton('A')">A</button>
-                <button id="S" class="control-button off" onclick="toggleButton('S')">S</button>
-                <button id="D" class="control-button off" onclick="toggleButton('D')">D</button>
+                <button id="S" class="control-button off" onclick="toggleButton('S')">D</button>
+                <button id="D" class="control-button off" onclick="toggleButton('D')">S</button>
             </div>
         </div>
 
@@ -84,6 +85,13 @@ HTML_PAGE = '''
             </div>
             <canvas id="tempChart" width="350" height="200"></canvas>
         </div>
+        
+        <div class="card">
+            <h2>Live Camera (OpenCV)</h2>
+            <div id="video-container" style="text-align: center;">
+            <img src="{{ url_for('video_feed') }}" id="videoFeed" width="300" height="250" style="border: 1px solid #ffffff;">
+        </div>
+    </div>
     </div>
 
     <script>
@@ -209,6 +217,31 @@ def get_status():
     except Exception as e:
         print(f"Error fetching status: {e}")
         return jsonify({"ui_movement": None, "temperature": "Temperature: ?°C"})
+
+# Open camera once
+camera = cv2.VideoCapture(0)   # 0 = default webcam, change to 1/2 if multiple cameras
+
+def generate_frames():
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        else:
+            # (Optional) Resize frame
+            frame = cv2.resize(frame, (350, 250))
+
+            # Encode to JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+            frame_bytes = buffer.tobytes()
+
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == "__main__":
